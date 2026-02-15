@@ -14,9 +14,6 @@ const iconMap: Record<string, keyof typeof MaterialIcons.glyphMap> = {
   education: 'school',
 };
 
-const analyticsData = [30, 44, 38, 52, 76, 60];
-const analyticsLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-
 export default function GoalDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -62,6 +59,35 @@ export default function GoalDetailScreen() {
     return Math.min(1, goal.current_amount / goal.target_amount);
   }, [goal]);
 
+  const analytics = useMemo(() => {
+    const now = new Date();
+    const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    const totals = Array.from({ length: labels.length }, () => 0);
+    transactions.forEach((tx) => {
+      const date = new Date(tx.created_at);
+      if (Number.isNaN(date.getTime())) {
+        return;
+      }
+      if (date.getFullYear() !== now.getFullYear()) {
+        return;
+      }
+      if (date.getMonth() >= 0 && date.getMonth() < labels.length) {
+        totals[date.getMonth()] += tx.amount;
+      }
+    });
+    const maxValue = Math.max(...totals, 0);
+    const minHeight = 24;
+    const maxHeight = 70;
+    const heights = totals.map((value) => {
+      if (maxValue === 0) {
+        return (minHeight + maxHeight) / 2;
+      }
+      return minHeight + (value / maxValue) * (maxHeight - minHeight);
+    });
+    const average = totals.reduce((acc, value) => acc + value, 0) / totals.length;
+    return { labels, heights, average };
+  }, [transactions]);
+
   if (!goal) {
     return (
       <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
@@ -82,6 +108,8 @@ export default function GoalDetailScreen() {
   }
 
   const iconName = iconMap[goal.icon] ?? 'flag';
+  const subtitle =
+    goal.title.toLowerCase() === 'summer vacation' ? `${goal.subtitle} 😁` : goal.subtitle;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
@@ -110,7 +138,7 @@ export default function GoalDetailScreen() {
           </View>
 
           <Text style={styles.goalTitle}>{goal.title}</Text>
-          <Text style={styles.goalSubtitle}>{goal.subtitle}</Text>
+          <Text style={styles.goalSubtitle}>{subtitle}</Text>
 
           <View style={styles.progressCard}>
             <View style={styles.progressAmountRow}>
@@ -134,13 +162,15 @@ export default function GoalDetailScreen() {
           <View style={styles.analyticsCard}>
             <View style={styles.analyticsHeader}>
               <Text style={styles.analyticsTitle}>Saving Analytics</Text>
-              <Text style={styles.analyticsValue}>Average per month {formatCurrency(1202)}</Text>
+              <Text style={styles.analyticsValue}>
+                Average per month {formatCurrency(analytics.average)}
+              </Text>
             </View>
             <View style={styles.analyticsChart}>
-              {analyticsData.map((value, index) => (
-                <View key={`${analyticsLabels[index]}-${value}`} style={styles.analyticsItem}>
+              {analytics.heights.map((value, index) => (
+                <View key={`${analytics.labels[index]}-${value}`} style={styles.analyticsItem}>
                   <View style={[styles.analyticsBar, { height: value }]} />
-                  <Text style={styles.analyticsLabel}>{analyticsLabels[index]}</Text>
+                  <Text style={styles.analyticsLabel}>{analytics.labels[index]}</Text>
                 </View>
               ))}
             </View>
@@ -157,9 +187,12 @@ export default function GoalDetailScreen() {
                 </View>
                 <View style={styles.transactionDetails}>
                   <Text style={styles.transactionTitle}>{tx.title}</Text>
-                  <Text style={styles.transactionSubtitle}>{formatTime(tx.created_at)}</Text>
+                  <Text style={styles.transactionSubtitle}>{goal.title}</Text>
                 </View>
-                <Text style={styles.transactionAmount}>+{formatCurrency(tx.amount)}</Text>
+                <View style={styles.transactionMeta}>
+                  <Text style={styles.transactionAmount}>+{formatCurrency(tx.amount)}</Text>
+                  <Text style={styles.transactionTime}>{formatTime(tx.created_at)}</Text>
+                </View>
               </View>
             ))}
           </View>
@@ -196,14 +229,14 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   headerTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     color: GoalTheme.text,
   },
   iconButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
@@ -215,8 +248,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   iconBadge: {
-    width: 42,
-    height: 42,
+    width: 40,
+    height: 40,
     borderRadius: 14,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
@@ -227,6 +260,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 12,
+    alignItems: 'flex-end',
   },
   increaseText: {
     color: '#1DA86C',
@@ -252,8 +286,13 @@ const styles = StyleSheet.create({
   progressCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 18,
-    padding: 16,
+    padding: 14,
     marginBottom: 18,
+    shadowColor: GoalTheme.shadow,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
   },
   progressAmountRow: {
     flexDirection: 'row',
@@ -270,7 +309,7 @@ const styles = StyleSheet.create({
     color: GoalTheme.muted,
   },
   progressTrack: {
-    height: 6,
+    height: 5,
     borderRadius: 999,
     backgroundColor: '#ECECEC',
     overflow: 'hidden',
@@ -291,8 +330,13 @@ const styles = StyleSheet.create({
   analyticsCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 18,
-    padding: 16,
+    padding: 14,
     marginBottom: 18,
+    shadowColor: GoalTheme.shadow,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
   },
   analyticsHeader: {
     marginBottom: 12,
@@ -317,8 +361,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   analyticsBar: {
-    width: 20,
-    borderRadius: 10,
+    width: 18,
+    borderRadius: 12,
     backgroundColor: '#2A2B2F',
   },
   analyticsLabel: {
@@ -339,6 +383,11 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     padding: 14,
     gap: 12,
+    shadowColor: GoalTheme.shadow,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
   },
   transactionRow: {
     flexDirection: 'row',
@@ -366,10 +415,18 @@ const styles = StyleSheet.create({
     color: GoalTheme.muted,
     marginTop: 4,
   },
+  transactionMeta: {
+    alignItems: 'flex-end',
+  },
   transactionAmount: {
     fontSize: 13,
     fontWeight: '700',
     color: GoalTheme.text,
+  },
+  transactionTime: {
+    fontSize: 10,
+    color: GoalTheme.muted,
+    marginTop: 4,
   },
   footer: {
     position: 'absolute',

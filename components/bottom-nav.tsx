@@ -84,6 +84,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+    shadowColor: GoalTheme.shadow,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.18,
+    shadowRadius: 16,
+    elevation: 6,
   },
   item: {
     width: 40,
@@ -94,6 +99,11 @@ const styles = StyleSheet.create({
   },
   itemActive: {
     backgroundColor: '#FFFFFF',
+    shadowColor: GoalTheme.shadow,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    elevation: 3,
   },
   itemAction: {
     width: 46,

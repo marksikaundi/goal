@@ -49,20 +49,20 @@ export function GoalCard({ goal, onPress }: { goal: Goal; onPress?: () => void }
 const styles = StyleSheet.create({
   card: {
     backgroundColor: GoalTheme.card,
-    borderRadius: 18,
-    padding: 16,
+    borderRadius: 16,
+    padding: 14,
     marginBottom: 14,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
+    shadowColor: GoalTheme.shadow,
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 4,
+    shadowRadius: 12,
+    elevation: 3,
   },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -70,14 +70,14 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   iconBadge: {
-    width: 30,
-    height: 30,
+    width: 28,
+    height: 28,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
     color: GoalTheme.text,
   },
@@ -88,16 +88,16 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   amountCurrent: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
     color: GoalTheme.text,
   },
   amountTarget: {
-    fontSize: 13,
+    fontSize: 12,
     color: GoalTheme.muted,
   },
   progressTrack: {
-    height: 6,
+    height: 5,
     borderRadius: 999,
     backgroundColor: '#ECECEC',
     overflow: 'hidden',
@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   metaText: {
-    fontSize: 12,
+    fontSize: 11,
     color: GoalTheme.muted,
   },
 });

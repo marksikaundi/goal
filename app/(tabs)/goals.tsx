@@ -42,8 +42,8 @@ export default function GoalsScreen() {
   }, []);
 
   const chartBars = useMemo(() => {
-    const maxHeight = 140;
-    const minHeight = 60;
+    const maxHeight = 150;
+    const minHeight = 70;
     const goalBars = goals.map((goal) => {
       const progress = Math.min(1, goal.current_amount / goal.target_amount);
       const height = minHeight + (maxHeight - minHeight) * progress;
@@ -52,9 +52,13 @@ export default function GoalsScreen() {
         color: goal.color,
         icon: iconMap[goal.icon] ?? 'flag',
         height,
+        isBalance: false,
       };
     });
-    return [{ id: 'balance', color: '#101214', height: maxHeight, icon: null }, ...goalBars];
+    return [
+      { id: 'balance', color: '#101214', height: maxHeight, icon: 'account-balance-wallet', isBalance: true },
+      ...goalBars,
+    ];
   }, [goals]);
 
   return (
@@ -76,14 +80,25 @@ export default function GoalsScreen() {
             <Text style={styles.balanceLabel}>Current Balance</Text>
             <View style={styles.dashedLine} />
             <View style={styles.chartRow}>
+              <View style={styles.chartBaseline} />
               {chartBars.map((bar) => (
                 <View key={bar.id} style={styles.chartItem}>
-                  <View style={[styles.chartBar, { height: bar.height, backgroundColor: bar.color }]} />
                   {bar.icon ? (
-                    <View style={styles.chartIcon}>
-                      <MaterialIcons name={bar.icon} size={14} color={bar.color} />
+                    <View style={[styles.chartIcon, bar.isBalance ? styles.balanceIcon : null]}>
+                      <MaterialIcons
+                        name={bar.icon}
+                        size={14}
+                        color={bar.isBalance ? '#101214' : bar.color}
+                      />
                     </View>
                   ) : null}
+                  <View
+                    style={[
+                      styles.chartBar,
+                      bar.isBalance ? styles.balanceBar : styles.goalBar,
+                      { height: bar.height, backgroundColor: bar.color },
+                    ]}
+                  />
                 </View>
               ))}
             </View>
@@ -122,7 +137,7 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: 19,
     fontWeight: '700',
     color: GoalTheme.text,
   },
@@ -134,6 +149,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     gap: 6,
+    shadowColor: GoalTheme.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 2,
   },
   addButtonText: {
     fontSize: 12,
@@ -145,6 +165,11 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     padding: 16,
     marginBottom: 22,
+    shadowColor: GoalTheme.shadow,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    elevation: 3,
   },
   balanceChip: {
     alignSelf: 'flex-start',
@@ -156,12 +181,12 @@ const styles = StyleSheet.create({
   },
   balanceAmount: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
   },
   balanceLabel: {
     color: GoalTheme.muted,
-    fontSize: 12,
+    fontSize: 11,
   },
   dashedLine: {
     borderBottomWidth: 1,
@@ -172,16 +197,32 @@ const styles = StyleSheet.create({
   chartRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    gap: 16,
-    height: 170,
+    gap: 14,
+    height: 190,
+    position: 'relative',
+  },
+  chartBaseline: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 54,
+    borderTopWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: '#DADADA',
   },
   chartItem: {
     alignItems: 'center',
     justifyContent: 'flex-end',
+    gap: 8,
   },
   chartBar: {
+    borderRadius: 14,
+  },
+  balanceBar: {
+    width: 26,
+  },
+  goalBar: {
     width: 22,
-    borderRadius: 12,
   },
   chartIcon: {
     width: 26,
@@ -190,12 +231,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 8,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12,
     shadowRadius: 6,
     elevation: 2,
+  },
+  balanceIcon: {
+    backgroundColor: '#FFFFFF',
   },
   sectionTitle: {
     fontSize: 16,

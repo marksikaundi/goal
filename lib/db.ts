@@ -1,4 +1,4 @@
-import * as SQLite from 'expo-sqlite';
+import { openDatabaseAsync, type SQLiteDatabase } from 'expo-sqlite';
 
 export type Goal = {
   id: number;
@@ -19,29 +19,35 @@ export type Transaction = {
   created_at: string;
 };
 
-const db = SQLite.openDatabase('goals.db');
+let dbInstance: Promise<SQLiteDatabase> | null = null;
 let initialized = false;
 let initializing: Promise<void> | null = null;
 
-function executeAsync(sql: string, params: Array<string | number | null> = []) {
-  return new Promise<SQLite.SQLResultSet>((resolve, reject) => {
-    db.transaction(
-      (tx) => {
-        tx.executeSql(
-          sql,
-          params,
-          (_, result) => resolve(result),
-          (_, error) => {
-            reject(error);
-            return false;
-          }
-        );
-      },
-      (error) => {
-        reject(error);
-      }
-    );
-  });
+async function getDb() {
+  if (!dbInstance) {
+    dbInstance = openDatabaseAsync('goals.db');
+  }
+  return dbInstance;
+}
+
+async function execAsync(sql: string) {
+  const db = await getDb();
+  await db.execAsync(sql);
+}
+
+async function runAsync(sql: string, params: Array<string | number | null> = []) {
+  const db = await getDb();
+  return db.runAsync(sql, params);
+}
+
+async function getFirstAsync<T>(sql: string, params: Array<string | number | null> = []) {
+  const db = await getDb();
+  return db.getFirstAsync<T>(sql, params);
+}
+
+async function getAllAsync<T>(sql: string, params: Array<string | number | null> = []) {
+  const db = await getDb();
+  return db.getAllAsync<T>(sql, params);
 }
 
 async function ensureReady() {
@@ -50,14 +56,14 @@ async function ensureReady() {
   }
   if (!initializing) {
     initializing = (async () => {
-      await executeAsync('PRAGMA foreign_keys = ON');
-      await executeAsync(
+      await execAsync('PRAGMA foreign_keys = ON;');
+      await execAsync(
         `CREATE TABLE IF NOT EXISTS account (
           id INTEGER PRIMARY KEY NOT NULL,
           balance REAL NOT NULL
         );`
       );
-      await executeAsync(
+      await execAsync(
         `CREATE TABLE IF NOT EXISTS goals (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           title TEXT NOT NULL,
@@ -69,7 +75,7 @@ async function ensureReady() {
           icon TEXT NOT NULL
         );`
       );
-      await executeAsync(
+      await execAsync(
         `CREATE TABLE IF NOT EXISTS transactions (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           goal_id INTEGER NOT NULL,
@@ -80,14 +86,16 @@ async function ensureReady() {
         );`
       );
 
-      const accountCount = await executeAsync('SELECT COUNT(*) as count FROM account');
-      if (accountCount.rows.item(0).count === 0) {
-        await executeAsync('INSERT INTO account (id, balance) VALUES (?, ?)', [1, 23400]);
+      const accountCount = await getFirstAsync<{ count: number }>(
+        'SELECT COUNT(*) as count FROM account'
+      );
+      if (!accountCount || accountCount.count === 0) {
+        await runAsync('INSERT INTO account (id, balance) VALUES (?, ?)', [1, 23400]);
       }
 
-      const goalCount = await executeAsync('SELECT COUNT(*) as count FROM goals');
-      if (goalCount.rows.item(0).count === 0) {
-        await executeAsync(
+      const goalCount = await getFirstAsync<{ count: number }>('SELECT COUNT(*) as count FROM goals');
+      if (!goalCount || goalCount.count === 0) {
+        await runAsync(
           'INSERT INTO goals (title, subtitle, current_amount, target_amount, due_date, color, icon) VALUES (?, ?, ?, ?, ?, ?, ?)',
           [
             'Summer vacation',
@@ -99,7 +107,7 @@ async function ensureReady() {
             'vacation',
           ]
         );
-        await executeAsync(
+        await runAsync(
           'INSERT INTO goals (title, subtitle, current_amount, target_amount, due_date, color, icon) VALUES (?, ?, ?, ?, ?, ?, ?)',
           [
             'Real estate',
@@ -111,7 +119,7 @@ async function ensureReady() {
             'estate',
           ]
         );
-        await executeAsync(
+        await runAsync(
           'INSERT INTO goals (title, subtitle, current_amount, target_amount, due_date, color, icon) VALUES (?, ?, ?, ?, ?, ?, ?)',
           [
             'Magister education',
@@ -124,18 +132,42 @@ async function ensureReady() {
           ]
         );
 
-        await executeAsync(
+        await runAsync(
           'INSERT INTO transactions (goal_id, title, amount, created_at) VALUES (?, ?, ?, ?)',
           [1, 'Goal top up', 320, '2026-02-12T12:00:00Z']
         );
-        await executeAsync(
+        await runAsync(
           'INSERT INTO transactions (goal_id, title, amount, created_at) VALUES (?, ?, ?, ?)',
           [1, 'Card transfer', 120, '2026-02-10T09:30:00Z']
         );
-        await executeAsync(
+        await runAsync(
           'INSERT INTO transactions (goal_id, title, amount, created_at) VALUES (?, ?, ?, ?)',
           [1, 'Cash deposit', 80, '2026-02-07T08:15:00Z']
         );
+      }
+
+      const sampleTransactions = [
+        [1, 'Goal top up', 320, '2026-02-12T12:00:00Z'],
+        [1, 'Card transfer', 120, '2026-02-10T09:30:00Z'],
+        [1, 'Cash deposit', 80, '2026-02-07T08:15:00Z'],
+        [1, 'Auto save', 210, '2026-01-14T10:00:00Z'],
+        [1, 'Bonus', 180, '2026-03-18T11:20:00Z'],
+        [1, 'Side income', 260, '2026-04-22T15:45:00Z'],
+        [1, 'Refund', 140, '2026-05-06T09:10:00Z'],
+        [1, 'Cash deposit', 220, '2026-06-12T13:05:00Z'],
+      ] as const;
+
+      for (const [goalId, title, amount, createdAt] of sampleTransactions) {
+        const existing = await getFirstAsync<{ count: number }>(
+          'SELECT COUNT(*) as count FROM transactions WHERE goal_id = ? AND created_at = ?',
+          [goalId, createdAt]
+        );
+        if (!existing || existing.count === 0) {
+          await runAsync(
+            'INSERT INTO transactions (goal_id, title, amount, created_at) VALUES (?, ?, ?, ?)',
+            [goalId, title, amount, createdAt]
+          );
+        }
       }
 
       initialized = true;
@@ -146,27 +178,27 @@ async function ensureReady() {
 
 export async function getAccountBalance() {
   await ensureReady();
-  const result = await executeAsync('SELECT balance FROM account WHERE id = 1');
-  return result.rows.length ? (result.rows.item(0).balance as number) : 0;
+  const result = await getFirstAsync<{ balance: number }>('SELECT balance FROM account WHERE id = 1');
+  return result?.balance ?? 0;
 }
 
 export async function getGoals() {
   await ensureReady();
-  const result = await executeAsync('SELECT * FROM goals ORDER BY id ASC');
-  return result.rows._array as Goal[];
+  const result = await getAllAsync<Goal>('SELECT * FROM goals ORDER BY id ASC');
+  return result;
 }
 
 export async function getGoalById(id: number) {
   await ensureReady();
-  const result = await executeAsync('SELECT * FROM goals WHERE id = ?', [id]);
-  return result.rows.length ? (result.rows.item(0) as Goal) : null;
+  const result = await getFirstAsync<Goal>('SELECT * FROM goals WHERE id = ?', [id]);
+  return result ?? null;
 }
 
 export async function getTransactionsForGoal(goalId: number) {
   await ensureReady();
-  const result = await executeAsync(
+  const result = await getAllAsync<Transaction>(
     'SELECT * FROM transactions WHERE goal_id = ? ORDER BY created_at DESC',
     [goalId]
   );
-  return result.rows._array as Transaction[];
+  return result;
 }

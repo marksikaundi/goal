@@ -44,24 +44,27 @@ export default function HomeScreen() {
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}>
           <View style={styles.headerRow}>
-            <View>
-              <Text style={styles.welcomeLabel}>Welcome,</Text>
-              <Text style={styles.welcomeName}>Salung</Text>
-            </View>
+            <Text style={styles.welcomeTitle}>Welcome, Salung</Text>
             <View style={styles.headerActions}>
               <Pressable style={styles.headerIcon}>
                 <Feather name="settings" size={18} color={GoalTheme.text} />
               </Pressable>
               <Pressable style={styles.headerIcon}>
-                <Feather name="bell" size={18} color={GoalTheme.text} />
+                <Feather name="power" size={18} color={GoalTheme.text} />
               </Pressable>
             </View>
           </View>
 
           <View style={styles.balanceCard}>
+            <View style={styles.cardPattern}>
+              <View style={[styles.cardRing, styles.cardRingTop]} />
+              <View style={[styles.cardRing, styles.cardRingBottom]} />
+              <View style={[styles.cardGlow, styles.cardGlowLeft]} />
+              <View style={[styles.cardGlow, styles.cardGlowRight]} />
+            </View>
             <View style={styles.cardTopRow}>
               <View style={styles.cardChip}>
-                <MaterialIcons name="credit-card" size={18} color="#0B0C0E" />
+                <MaterialIcons name="credit-card" size={16} color="#0B0C0E" />
               </View>
               <Text style={styles.cardNumber}>**** 6780</Text>
             </View>
@@ -77,8 +80,9 @@ export default function HomeScreen() {
 
           <View style={styles.sectionRow}>
             <Text style={styles.sectionTitle}>Your goals</Text>
-            <Pressable onPress={() => router.replace('/(tabs)/goals')}>
+            <Pressable onPress={() => router.replace('/(tabs)/goals')} style={styles.sectionLinkRow}>
               <Text style={styles.sectionLink}>View all</Text>
+              <Feather name="chevron-right" size={14} color={GoalTheme.muted} />
             </Pressable>
           </View>
 
@@ -120,17 +124,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 10,
-    marginBottom: 20,
+    marginTop: 8,
+    marginBottom: 18,
   },
-  welcomeLabel: {
-    color: GoalTheme.muted,
-    fontSize: 14,
-  },
-  welcomeName: {
+  welcomeTitle: {
     color: GoalTheme.text,
-    fontSize: 22,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '600',
   },
   headerActions: {
     flexDirection: 'row',
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F8F8F8',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -149,16 +149,58 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     padding: 18,
     marginBottom: 22,
+    overflow: 'hidden',
+    shadowColor: GoalTheme.shadow,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.18,
+    shadowRadius: 18,
+    elevation: 6,
+  },
+  cardPattern: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  cardRing: {
+    position: 'absolute',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 120,
+  },
+  cardRingTop: {
+    width: 220,
+    height: 220,
+    top: -120,
+    left: -20,
+  },
+  cardRingBottom: {
+    width: 180,
+    height: 180,
+    bottom: -90,
+    right: -30,
+  },
+  cardGlow: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+  },
+  cardGlowLeft: {
+    bottom: -40,
+    left: 30,
+  },
+  cardGlowRight: {
+    top: -50,
+    right: 10,
   },
   cardTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 18,
+    marginBottom: 14,
   },
   cardChip: {
-    width: 32,
-    height: 22,
+    width: 28,
+    height: 20,
     borderRadius: 6,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
@@ -166,7 +208,7 @@ const styles = StyleSheet.create({
   },
   cardNumber: {
     color: '#FFFFFF',
-    fontSize: 12,
+    fontSize: 11,
     letterSpacing: 2,
   },
   cardLabel: {
@@ -178,7 +220,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 26,
     fontWeight: '700',
-    marginBottom: 20,
+    marginBottom: 18,
   },
   cardActions: {
     flexDirection: 'row',
@@ -189,16 +231,16 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   actionIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
   },
   actionLabel: {
-    color: '#E5E5E5',
-    fontSize: 11,
+    color: '#DADADA',
+    fontSize: 10,
   },
   sectionRow: {
     flexDirection: 'row',
@@ -207,12 +249,17 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
     color: GoalTheme.text,
   },
+  sectionLinkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   sectionLink: {
-    fontSize: 13,
+    fontSize: 12,
     color: GoalTheme.muted,
   },
 });
